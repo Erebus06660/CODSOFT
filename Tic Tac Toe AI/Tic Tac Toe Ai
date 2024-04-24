@@ -1,0 +1,314 @@
+import pygame
+import copy
+import random
+import sys
+import numpy as np
+
+pygame.init()
+dis = pygame.display.set_mode((900,900))
+pygame.display.set_caption('Erebus tic tac toe ')
+dis.fill((234, 139, 255))
+
+class AI:
+    def __init__(self,level=1 ,player=2):
+        self.level=level
+        self.p=player
+
+    def rnd(self, board):
+        playable_square= board.get_empty_squares()
+        pos= random.randrange(0,len(playable_square))
+        return playable_square[pos]
+
+    def minimax(self,board,maximizing):
+        case= board.final()
+        if case==1:
+            return 1, None
+        
+        if case==2:
+            return -1, None
+        
+        elif board.full():
+            return 0, None
+        
+        if maximizing:
+            max_eval = -100
+            best_move = None
+            empty_sqrs = board.get_empty_squares()
+
+            for (row, col) in empty_sqrs:
+                temp_board = copy.deepcopy(board)
+                temp_board.marking(row, col,1)
+                eval = self.minimax(temp_board, False)[0]
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = (row, col)
+
+            return max_eval, best_move
+
+        elif not maximizing:
+            min_eval = 100
+            best_move = None
+            empty_sqrs = board.get_empty_squares()
+
+            for (row, col) in empty_sqrs:
+                temp_board = copy.deepcopy(board)
+                temp_board.marking(row, col, self.p)
+                eval = self.minimax(temp_board, True)[0]
+                if eval < min_eval:
+                    min_eval = eval
+                    best_move = (row, col)
+
+            return min_eval, best_move
+
+                
+            return min_eval, best
+
+
+        
+
+    def eval(self,m_b):
+        if self.level==0:
+            eval='random'
+            move=self.rnd(m_b)
+
+        else:
+            eval,move=self.minimax(m_b,False)
+            print(f'Ai hs chosen to move in pos{move}with an evaluation of:{eval}')
+
+        return move
+class Console:
+    def __init__(self):
+        self.board= np.zeros((3,3))
+        self.empty_squares=self.board
+        self.marked=0
+    
+    def marking(self,r,c,p):
+        self.board[r][c] = p
+        self.marked=self.marked+1
+    
+    def empty(self, r,c):
+        if self.board[r][c]==0:
+            return True
+        else:
+            return False
+        
+    def full(self):
+       if self.marked==9:
+           return True
+       else:
+           return False
+    def blank(self):
+        if self.marked==0:
+            return True
+        else:
+            return False
+    def get_empty_squares(self):
+        empty_squares= []
+        for r in range(3):
+            for c in range(3):
+                if self.empty(r,c):
+                    empty_squares.append((r,c))
+        return empty_squares
+    def final(self,show=False):
+        for c in range(3):
+            if self.board[0][c]==self.board[1][c]==self.board[2][c]!=0:
+                if show:
+                    x = c*300+150
+                    if self.board[0][c] == 1:
+                        colour=(255,255,255)
+    
+                    elif self.board[0][c] ==2:
+                        colour=(0,0,0)
+
+                    pygame.draw.line(dis,colour, (x,20),(x,880),20)
+                return self.board[0][c]
+            
+        for r in range(3):
+            if self.board[r][0]==self.board[r][1]==self.board[r][2]!=0:
+                if show:
+                    y = r*300+150
+                    if self.board[r][0]==1:
+                        colour=(255,255,255)
+
+                    elif self.board[r][0]==2:
+                        colour=(0,0,0)
+
+                    pygame.draw.line(dis,colour,(20,y),(880,y),20)
+                return self.board[r][2]
+            
+        if self.board[0][0]==self.board[1][1]==self.board[2][2]!=0:
+            if show:
+                if self.board[1][1]== 1:
+                    colour=(255,255,255)
+    
+                elif self.board[1][1] ==2:
+                    colour=(0,0,0)
+    
+                pygame.draw.line(dis,colour,(20,20),(880,880),20)
+            return self.board[1][1]
+        
+        if self.board[2][0]==self.board[1][1]==self.board[0][2]!=0:
+            if show:
+                if self.board[1][1] == 1:
+                    colour=(255,255,255)
+    
+                elif self.board[1][1] ==2:
+                    colour=(0,0,0)
+    
+                pygame.draw.line(dis,colour,(20,880),(880,20),20)
+            return self.board[1][1]
+        
+        return 0
+class Game:
+    def __init__(self):
+        self.p = 1
+        self.Ai=AI()  
+        self.console=Console()
+        self.mode='Ai'
+        self.running= True
+        self.lines()
+
+    def lines(self):
+
+        dis.fill((234, 139, 255))
+        pygame.draw.line(dis, (132, 30, 144), (20, 300), (880,300), 20)
+        pygame.draw.line(dis, (132, 30, 144), (20, 600), (880,600), 20)
+        pygame.draw.line(dis, (132, 30, 144), (300, 20), (300,880), 20)
+        pygame.draw.line(dis, (132, 30, 144), (600, 20), (600,880), 20)
+
+    def draw(self,r,c):
+        if self.p==1:
+            pygame.draw.circle(dis, (255, 255, 255), (int(c*300 + 150), int(r*300 + 150)), 100,20) #circle for p1
+        elif self.p==2: #cross for p2
+            pygame.draw.line(dis,(0 ,0, 0),((c*300+65), (r*300+300-65)), ((c*300+300-65), (r*300+65)), 30)
+            pygame.draw.line(dis,(0, 0, 0),((c*300+65), (r*300+65)),((c*300+300-65), (r*300+300-65)), 30)
+
+    def turn(self):
+        self.p=self.p%2+1
+
+    def change_mode(self):
+        if self.mode=='Ai':
+            self.mode= 'pvp'
+            print("Game Mode Changed to PVP")
+        else:
+            print("Game Mode Changed To AI")
+            self.mode='Ai'
+    def restart(self):
+        self.__init__()
+        print("Game Restarted")
+
+    def over(self):
+        if self.console.final(show=True)!=0 or self.console.full():
+            return True
+        
+        else:
+            return False
+        
+    def winner_message(self, winner):
+        if winner == 1:
+            text_color = (255, 255, 255)
+        else:
+            text_color = (0, 0, 0)
+        font = pygame.font.Font(None, 120)    
+        text = font.render(f"Player {winner} Wins!", True,text_color)
+        text_rect = text.get_rect(center=(450, 450))
+       
+        padding = 75
+        rect_x = text_rect.x - padding
+        rect_y = text_rect.y - padding
+        rect_width = text_rect.width + 2 * padding
+        rect_height = text_rect.height + 2 * padding
+
+        pygame.draw.rect(dis, (132, 30, 144), (rect_x, rect_y, rect_width, rect_height))
+        
+        dis.blit(text, text_rect)
+
+def main():
+
+    game=Game()
+    
+    board = game.console
+    ai=game.Ai
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mX = event.pos[0]
+                mY = event.pos[1]
+
+                clicked_c = int(mX // 300)
+                clicked_r = int(mY // 300)
+
+                if board.empty(clicked_r,clicked_c) and game.running:
+                        board.marking(clicked_r,clicked_c,game.p)
+                        game.draw(clicked_r,clicked_c)
+                        game.turn()
+
+                        if game.over():
+                            game.running=False
+                            winner = game.console.final()
+                            if winner != 0:
+                                game.winner_message(winner)
+                            else:
+                                font = pygame.font.Font(None, 120)
+                                text = font.render("It's a Tie!", True, (192, 192, 192))
+                                text_rect = text.get_rect(center=(450, 450))
+                                padding = 75
+                                rect_x = text_rect.x - padding
+                                rect_y = text_rect.y - padding
+                                rect_width = text_rect.width + 2 * padding
+                                rect_height = text_rect.height + 2 * padding
+
+                                pygame.draw.rect(dis, (132, 30, 144), (rect_x, rect_y, rect_width, rect_height))
+                                dis.blit(text, text_rect)
+                                
+
+            if event.type==pygame.KEYDOWN:
+
+                if event.key==pygame.K_g:
+                 game.change_mode()
+
+                if event.key==pygame.K_0:
+                    ai.level=0
+                    print("Changed AI Level to Random")
+
+                if event.key==pygame.K_1:
+                    ai.level=1
+                    print("Changed AI Level to Unbeatable")
+
+                if event.key==pygame.K_r:
+                    game.restart()
+                    board = game.console
+                    ai=game.Ai
+
+        if game.mode=='Ai' and game.p==ai.p and game.running:
+            pygame.display.update()
+
+            r,c=ai.eval(board)
+            board.marking(r,c, ai.p)
+            game.draw(r,c) 
+            game.turn()
+
+            if game.over():
+                game.running=False
+                winner = game.console.final()
+                if winner != 0:
+                    game.winner_message(winner)
+                else:
+                    font = pygame.font.Font(None, 120)
+                    text = font.render("It's a Tie!", True, (192, 192, 192))
+                    text_rect = text.get_rect(center=(450, 450))
+                    padding = 75
+                    rect_x = text_rect.x - padding
+                    rect_y = text_rect.y - padding
+                    rect_width = text_rect.width + 2 * padding
+                    rect_height = text_rect.height + 2 * padding
+
+                    pygame.draw.rect(dis, (132, 30, 144), (rect_x, rect_y, rect_width, rect_height))
+                    dis.blit(text, text_rect)
+
+        pygame.display.update()
+
+main()
